@@ -1,0 +1,11 @@
+Model Information:
+* title:	Lava lamp
+* source:	https://sketchfab.com/3d-models/lava-lamp-a03b4dfd12614a13ba354b7fe5f813c8
+* author:	BenAld (https://sketchfab.com/BenAld)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Lava lamp" (https://sketchfab.com/3d-models/lava-lamp-a03b4dfd12614a13ba354b7fe5f813c8) by BenAld (https://sketchfab.com/BenAld) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
