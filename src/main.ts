@@ -101,11 +101,12 @@ class App {
         this.renderer.render(this.scene, this.camera);
         // Renderizar con post-procesado
         //this.composer.render();
+        
     }
 
     private setupGUI(): void {
         if (!this.nightVisionPass || !this.nightVisionPass.material.uniforms) {
-            console.error('❌ Error: nightVisionPass no está definido.');
+            console.error('Error: nightVisionPass no está definido.');
             return;
         }
 
