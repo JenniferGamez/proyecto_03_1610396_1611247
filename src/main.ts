@@ -19,14 +19,16 @@ class App {
     private gui: GUI;
     
     // Privados para el post-procesado
-    private composer: EffectComposer;
-    private lavaLampModel: THREE.Object3D | null = null; 
-    private bloomPass: ShaderPass;
+    private composer: EffectComposer; 
+    private nightVisionPass: ShaderPass;
 
     constructor() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.z = 5;
+        this.camera.position.z = 2;
+        this.camera.position.y = 3;
+        this.camera.position.x = -1;
+
 
         // Configuración del renderer
         this.renderer = new THREE.WebGLRenderer({ 
@@ -42,15 +44,13 @@ class App {
         // Controles de la camara
         const controls = new OrbitControls(this.camera, this.renderer.domElement);
         controls.enableDamping = true;
-
-        // Cargar el modelo 
-        ModelLoader.loadModel('../static/img/lava_lamp/scene.gltf', (model) => {
-            model.scale.set(1/6, 1/6, 1/6);
-            model.position.set(0, -8, -8);
-            this.scene.add(model);
-            this.lavaLampModel = model;
-        });
         
+        ModelLoader.loadModel('../static/img/strange_flower/scene.gltf', (model) => {
+            model.scale.set(1/2, 1/2, 1/2);
+            model.position.set(0, 0, 0);
+            this.scene.add(model);
+        });
+
         // Configuración de las luces
         const pointLight = new THREE.PointLight(0xffffff, 100);
         pointLight.position.set(5, 10, 10);
@@ -64,27 +64,28 @@ class App {
         const renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(renderPass);
 
-        // Bloom Shader Pass
-        const bloomShader = new THREE.ShaderMaterial({
+        // Night Vision Shader Pass
+        const nightVisionShader = new THREE.ShaderMaterial({
             uniforms: {
-                tDiffuse: { value: null }, // Textura renderizada
-                intensity: { value: 1.0}, // Intensidad
-                resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }, // Resolución de la pantalla
+                tDiffuse: { value: null },
+                noiseIntensity: { value: 0.1 }, // Valor inicial de la intensidad del ruido
+                contrast: { value: 2.0 }, // Valor inicial del contraste
             },
             vertexShader: vertex,
             fragmentShader: fragment,
             glslVersion: THREE.GLSL3,
         });
 
-        this.bloomPass = new ShaderPass(bloomShader); // Inicializamos bloomPass
+        this.nightVisionPass = new ShaderPass(nightVisionShader);
         const fxaaPass = new ShaderPass(FXAAShader);
+
         fxaaPass.material.uniforms['resolution'].value.set(
             1 / window.innerWidth,
             1 / window.innerHeight
         );
 
         // Composer y Passes
-        this.composer.addPass(this.bloomPass);
+        this.composer.addPass(this.nightVisionPass);
         this.composer.addPass(fxaaPass);
 
         // GUI
@@ -97,29 +98,17 @@ class App {
         this.animate();
     }
 
-    private moveLava(): void {
-        if (this.lavaLampModel) {
-            const lavaBlobs = this.lavaLampModel.getObjectByName('bloblp');
-            if (lavaBlobs) {
-                const time = Date.now() * 0.002;
-                const amplitude = 0.2;
-                const offset = 50;
-                lavaBlobs.position.y = Math.sin(time) * amplitude + offset;
-                lavaBlobs.position.x = Math.sin(time) * amplitude + 4.7;
-            }
-        }
-    } 
-
     private animate(): void {
         requestAnimationFrame(this.animate.bind(this));
-        this.moveLava(); // Mover la lava
         this.renderer.render(this.scene, this.camera);
+        //this.composer.render(); 
     }
 
     private setupGUI(): void {
-        const bloomFolder = this.gui.addFolder('Bloom Settings');
-        bloomFolder.add(this.bloomPass.material.uniforms['intensity'], 'value', 0, 5, 0.1).name('Bloom Intensity');
-        bloomFolder.open();
+        const nightVisionFolder = this.gui.addFolder('Night Vision');
+        nightVisionFolder.add(this.nightVisionPass.uniforms.noiseIntensity, 'value', 0, 1, 0.01).name('Noise Intensity');
+        nightVisionFolder.add(this.nightVisionPass.uniforms.contrast, 'value', 0, 5, 0.1).name('Contrast');
+        nightVisionFolder.open();
     }
 
     private onWindowResize(): void {

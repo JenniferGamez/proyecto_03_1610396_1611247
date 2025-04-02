@@ -1,39 +1,45 @@
 precision mediump float;
 
-// Uniforms
-uniform sampler2D tDiffuse; // Textura renderizada
-uniform vec2 resolution;    // Resolución de la pantalla
-uniform float intensity;    // Intensidad del Bloom
+// uniform sampler2D tDiffuse;
+// uniform float noiseIntensity;
+// uniform float contrast;
 
-// Varying
-in vec2 vUv; // Coordenadas UV
+// varying vec2 vUv;
 
-// Output
-out vec4 fragColor; // Color de salida
+// void main() {
+//     vec4 texel = texture(tDiffuse, vUv);
+//     vec3 color = texel.rgb;
 
-float luminance(vec3 color) {
-    return dot(color, vec3(0.2126, 0.7152, 0.0722));
-}
+//     // Conversión a tonos verdosos
+//     color = vec3(0.0, color.g * 1.5, 0.0);
+
+//     // Ruido (grano)
+//     float noise = (rand(vUv * time) - 0.5) * noiseIntensity;
+//     color += noise;
+
+//     // Bajo rango dinámico (contraste)
+//     color = (color - 0.5) * contrast + 0.5;
+
+//     // Salida final
+//     gl_FragColor = vec4(color, texel.a);
+// }
+
+// // Función de ruido pseudoaleatorio (puedes usar una mejor si lo deseas)
+// float rand(vec2 co) {
+//     return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+// }
+
+in vec2 vUv;
+out vec4 fragColor;
+
+uniform sampler2D tDiffuse;
+uniform float noiseIntensity;
+uniform float contrast;
 
 void main() {
-    vec4 texel = texture(tDiffuse, vUv);
-    
-    // Obtener el color original del píxel
     vec4 color = texture(tDiffuse, vUv);
-
-    // Aplicar desenfoque a las áreas brillantes
-    vec4 blurredColor = vec4(0.0);
-    for (float x = -1.0; x <= 1.0; x++) {
-        for (float y = -1.0; y <= 1.0; y++) {
-            vec2 offset = vec2(x, y) / resolution; // Desplazamiento normalizado
-            blurredColor += texture(tDiffuse, vUv + offset);
-        }
-    }
-    blurredColor /= 9.0; // Normalizar el promedio de colores en el kernel
-
-    // Combina el color original con el Bloom desenfocado
-    fragColor = color + blurredColor * intensity;
+    float noise = (fract(sin(dot(vUv, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * noiseIntensity;
+    color.rgb += noise;
+    color.rgb = mix(vec3(0.0), color.rgb, contrast);
+    fragColor = color;
 }
-
-
-
