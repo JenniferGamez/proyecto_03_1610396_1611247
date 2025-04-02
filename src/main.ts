@@ -25,10 +25,7 @@ class App {
     constructor() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.z = 2;
-        this.camera.position.y = 3;
-        this.camera.position.x = -1;
-
+        this.camera.position.set(-1, 3, 2);
 
         // Configuración del renderer
         this.renderer = new THREE.WebGLRenderer({ 
@@ -46,7 +43,7 @@ class App {
         controls.enableDamping = true;
         
         ModelLoader.loadModel('../static/img/strange_flower/scene.gltf', (model) => {
-            model.scale.set(1/2, 1/2, 1/2);
+            model.scale.set(0.5, 0.5, 0.5);
             model.position.set(0, 0, 0);
             this.scene.add(model);
         });
@@ -64,7 +61,7 @@ class App {
         const renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(renderPass);
 
-        // Night Vision Shader Pass
+        // Shader para efecto de visión nocturna
         const nightVisionShader = new THREE.ShaderMaterial({
             uniforms: {
                 tDiffuse: { value: null },
@@ -77,14 +74,15 @@ class App {
         });
 
         this.nightVisionPass = new ShaderPass(nightVisionShader);
-        const fxaaPass = new ShaderPass(FXAAShader);
 
+        // Shader de anti-aliasing FXAA
+        const fxaaPass = new ShaderPass(FXAAShader);
         fxaaPass.material.uniforms['resolution'].value.set(
             1 / window.innerWidth,
             1 / window.innerHeight
         );
 
-        // Composer y Passes
+        // Agregar los pases al composer
         this.composer.addPass(this.nightVisionPass);
         this.composer.addPass(fxaaPass);
 
@@ -101,13 +99,19 @@ class App {
     private animate(): void {
         requestAnimationFrame(this.animate.bind(this));
         this.renderer.render(this.scene, this.camera);
-        //this.composer.render(); 
+        // Renderizar con post-procesado
+        //this.composer.render();
     }
 
     private setupGUI(): void {
+        if (!this.nightVisionPass || !this.nightVisionPass.material.uniforms) {
+            console.error('❌ Error: nightVisionPass no está definido.');
+            return;
+        }
+
         const nightVisionFolder = this.gui.addFolder('Night Vision');
-        nightVisionFolder.add(this.nightVisionPass.uniforms.noiseIntensity, 'value', 0, 1, 0.01).name('Noise Intensity');
-        nightVisionFolder.add(this.nightVisionPass.uniforms.contrast, 'value', 0, 5, 0.1).name('Contrast');
+        nightVisionFolder.add(this.nightVisionPass.material.uniforms.noiseIntensity, 'value', 0, 1, 0.01).name('Noise Intensity');
+        nightVisionFolder.add(this.nightVisionPass.material.uniforms.contrast, 'value', 0, 5, 0.1).name('Contrast');
         nightVisionFolder.open();
     }
 
@@ -115,6 +119,9 @@ class App {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Ajustar tamaño del composer
+        this.composer.setSize(window.innerWidth, window.innerHeight);
     }
 }
 
