@@ -6,7 +6,9 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { ModelLoader } from './utils/modelLoader';
+
 import { ControlGui } from './ControlGui';
+import { ParticleSystem } from './ParticleSystem';
 
 // Shaders
 import vertex from './shaders/vertex.glsl';
@@ -20,6 +22,7 @@ class App {
     private controls: OrbitControls;
     private bloomPass: ShaderPass;
     private gui: ControlGui;
+    private particleSystem: ParticleSystem;
   
     private cameraConfig = {
       fov: 75,
@@ -27,19 +30,13 @@ class App {
       near: 0.1,
       far: 1000,
     }
-    
-    // Variables para el sistema de partículas ( SIN FRAGMENT NI VERTEX LO SÉ T-T)
-    private particlesGeometry!: THREE.BufferGeometry;
-    private particlesMaterial!: THREE.PointsMaterial;
-    private particles!: THREE.Points;
-    private particlesCount: number = 100;
-    private particleSpeeds: Float32Array = new Float32Array(this.particlesCount);
-    private particleOpacities: Float32Array = new Float32Array();
-
 
     constructor() {
         // Crear la escena
         this.scene = new THREE.Scene();
+
+        // Inicializar el sistema de particulas
+        this.particleSystem = new ParticleSystem(this.scene);
 
         // Configuración de la camara
         this.camera = new THREE.PerspectiveCamera(
@@ -79,7 +76,7 @@ class App {
             this.scene.add(model);
 
             // Crear el sistema de partículas alrededor del modelo
-            this.createParticles(model);
+            this.particleSystem.createParticles(model);
         });
         
         // Configuración de la luz
@@ -110,80 +107,13 @@ class App {
         this.bloomPass = new ShaderPass(bloomShader);
         
         // Configurar la resolución del shader
-        this.composer.addPass(this.bloomPass); // Agrega el Bloom
+        this.composer.addPass(this.bloomPass); // Agrega el efecto Bloom
         this.composer.addPass(fxaaPass); // Mejora la resolución
       
         this.gui = new ControlGui(this.bloomPass);
   
         window.addEventListener('resize', () => this.onWindowResize());
         this.animate();
-    }
-
-    private createParticles(model: THREE.Object3D): void {
-        this.particlesGeometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(this.particlesCount * 3);
-        const colors = new Float32Array(this.particlesCount * 3);
-        this.particleSpeeds = new Float32Array(this.particlesCount);
-        this.particleOpacities = new Float32Array(this.particlesCount);
-
-        for (let i = 0; i < this.particlesCount; i++) {
-            const vertex = new THREE.Vector3();
-            vertex.x = (Math.random() - 0.5) * 3;
-            vertex.y = (Math.random() - 0.5) * 3;
-            vertex.z = (Math.random() - 0.5) * 3;
-
-            positions[i * 3] = vertex.x;
-            positions[i * 3 + 1] = vertex.y;
-            positions[i * 3 + 2] = vertex.z;
-
-            const color = new THREE.Color(0xffff00);
-            colors[i * 3] = color.r;
-            colors[i * 3 + 1] = color.g;
-            colors[i * 3 + 2] = color.b;
-
-            this.particleSpeeds[i] = Math.random() * 0.02 + 0.01;
-            this.particleOpacities[i] = 1.0;
-        }
-
-        this.particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        this.particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-        this.particlesMaterial = new THREE.PointsMaterial({
-            size: 0.02,
-            vertexColors: true,
-            blending: THREE.AdditiveBlending,
-            transparent: true,
-        });
-
-        this.particles = new THREE.Points(this.particlesGeometry, this.particlesMaterial);
-        this.scene.add(this.particles);
-
-        // Hacer que las partículas sigan al modelo
-        this.particles.position.copy(model.position);
-    }
-
-    private animateParticles(): void {
-        if (this.particles) {
-            const positions = this.particlesGeometry.attributes.position.array as number[];
-            const colors = this.particlesGeometry.attributes.color.array as number[];
-
-            for (let i = 0; i < this.particlesCount; i++) {
-                positions[i * 3 + 1] += this.particleSpeeds[i];
-                this.particleOpacities[i] -= 0.001;
-
-                if (this.particleOpacities[i] < 0) {
-                    positions[i * 3] = (Math.random() - 0.5) * 3;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 3;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 3;
-                    this.particleOpacities[i] = 1.0;
-                }
-
-                colors[i * 3 + 3] = this.particleOpacities[i];
-            }
-
-            this.particlesGeometry.attributes.position.needsUpdate = true;
-            this.particlesGeometry.attributes.color.needsUpdate = true;
-        }
     }
 
     private onWindowResize(): void {
@@ -199,7 +129,7 @@ class App {
         requestAnimationFrame(() => this.animate());
         this.controls.update();
         this.composer.render(); // Renderiza con EffectComposer
-        this.animateParticles(); // Actualiza la animación de partículas
+        this.particleSystem.animateParticles(); // Actualiza la animación de partículas
     }
   }
   
