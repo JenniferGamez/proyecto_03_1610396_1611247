@@ -21,7 +21,7 @@ This project was developed using the following tech stack:
 ## How to run this project
 
 1. Download and copy this project
-    ``git clone https://github.com/JenniferGamez/proyecto_02_1610396_1611247/ ``
+    ``git clone https://github.com/JenniferGamez/proyecto_03_1610396_1611247.git ``
 2. Install a compatible Node.js version (I guess any v20.10+ should suffice)
 3. Run `npm install` to install the dependencies
 4. Run `npm run dev` to run the Three.js project, usually on port 5173
