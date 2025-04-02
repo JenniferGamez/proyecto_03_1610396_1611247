@@ -20,6 +20,7 @@ class App {
     private composer: EffectComposer;
     
     private gui: GUI;
+    private lavaLampModel: THREE.Object3D | null = null; 
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -43,17 +44,61 @@ class App {
 
         // Cargar el modelo 
         ModelLoader.loadModel('../static/img/lava_lamp/scene.gltf', (model) => {
-            //model.scale.set(0, 0, 7);
-            model.position.set(0, 0, 0);
+            model.scale.set(1/6, 1/6, 1/6);
+            model.position.set(0, -8, -8);
             this.scene.add(model);
+            this.lavaLampModel = model;
         });
         
+        // Configuración de las luces
         const pointLight = new THREE.PointLight(0xffffff, 100);
-        pointLight.position.set(10, 10, 10);
+        pointLight.position.set(5, 10, 10);
         this.scene.add(pointLight);
 
         const ambientLight = new THREE.AmbientLight(0x404040);
         this.scene.add(ambientLight);
+
+
+        // Render Target
+        const renderTarget = new THREE.WebGLRenderTarget(
+            window.innerWidth, 
+            window.innerHeight
+        );
+
+        // Composer y Passes
+        this.composer = new EffectComposer(this.renderer, renderTarget);
+        const renderPass = new RenderPass(this.scene, this.camera);
+        this.composer.addPass(renderPass);
+
+        // Bloom Shader Pass
+        const bloomShader = new THREE.ShaderMaterial({
+            uniforms: {
+                tDiffuse: { value: null },
+                uBloomStrength: { value: 1.0 },
+                uBloomRadius: { value: 5.0 },
+            },
+            vertexShader: vertex,
+            fragmentShader: fragment,
+            glslVersion: THREE.GLSL3,
+        });
+
+        const bloomPass = new ShaderPass(bloomShader);
+        this.composer.addPass(bloomPass);
+        bloomPass.renderToScreen = true; // El último pass debe renderizarse a la pantalla
+
+        // GUI
+        this.gui = new GUI();
+        const params = {
+            bloomStrength: 1.0,
+            bloomRadius: 5.0,
+        };
+
+        this.gui.add(params, 'bloomStrength', 0, 5, 0.1).onChange((value) => {
+            bloomPass.material.uniforms.uBloomStrength.value = value;
+        });
+        this.gui.add(params, 'bloomRadius', 1, 10, 1).onChange((value) => {
+            bloomPass.material.uniforms.uBloomRadius.value = value;
+        });
 
         this.onWindowResize();
         
@@ -61,12 +106,26 @@ class App {
         this.animate();
     }
 
+    private moveLava(): void {
+        if (this.lavaLampModel) {
+            const lavaBlobs = this.lavaLampModel.getObjectByName('bloblp');
+            if (lavaBlobs) {
+                const time = Date.now() * 0.002;
+                const amplitude = 0.2;
+                const offset = 50;
+                lavaBlobs.position.y = Math.sin(time) * amplitude + offset;
+                lavaBlobs.position.x = Math.sin(time) * amplitude + 4.7;
+            }
+        }
+    } 
+
     private animate(): void {
         requestAnimationFrame(this.animate.bind(this));
-        //this.composer.render();
-    
+        this.composer.render();
+        this.moveLava(); // Mover la lava
         this.renderer.render(this.scene, this.camera);
     }
+
 
     private onWindowResize(): void {
         this.camera.aspect = window.innerWidth / window.innerHeight;
