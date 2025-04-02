@@ -5,7 +5,7 @@ import { GUI } from 'dat.gui';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { ModelLoader } from './utils/modelLoader';
 
 // Shaders
@@ -16,17 +16,18 @@ class App {
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
-
-    private composer: EffectComposer;
-    
     private gui: GUI;
+    
+    // Privados para el post-procesado
+    private composer: EffectComposer;
     private lavaLampModel: THREE.Object3D | null = null; 
+    private bloomPass: ShaderPass;
 
     constructor() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.z = 5;
-        
+
         // Configuración del renderer
         this.renderer = new THREE.WebGLRenderer({ 
             antialias: true, 
@@ -58,47 +59,37 @@ class App {
         const ambientLight = new THREE.AmbientLight(0x404040);
         this.scene.add(ambientLight);
 
-
-        // Render Target
-        const renderTarget = new THREE.WebGLRenderTarget(
-            window.innerWidth, 
-            window.innerHeight
-        );
-
-        // Composer y Passes
-        this.composer = new EffectComposer(this.renderer, renderTarget);
+        // Post-procesamiento
+        this.composer = new EffectComposer(this.renderer);
         const renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(renderPass);
 
         // Bloom Shader Pass
         const bloomShader = new THREE.ShaderMaterial({
             uniforms: {
-                tDiffuse: { value: null },
-                uBloomStrength: { value: 1.0 },
-                uBloomRadius: { value: 5.0 },
+                tDiffuse: { value: null }, // Textura renderizada
+                intensity: { value: 1.0}, // Intensidad
+                resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }, // Resolución de la pantalla
             },
             vertexShader: vertex,
             fragmentShader: fragment,
             glslVersion: THREE.GLSL3,
         });
 
-        const bloomPass = new ShaderPass(bloomShader);
-        this.composer.addPass(bloomPass);
-        bloomPass.renderToScreen = true; // El último pass debe renderizarse a la pantalla
+        this.bloomPass = new ShaderPass(bloomShader); // Inicializamos bloomPass
+        const fxaaPass = new ShaderPass(FXAAShader);
+        fxaaPass.material.uniforms['resolution'].value.set(
+            1 / window.innerWidth,
+            1 / window.innerHeight
+        );
+
+        // Composer y Passes
+        this.composer.addPass(this.bloomPass);
+        this.composer.addPass(fxaaPass);
 
         // GUI
         this.gui = new GUI();
-        const params = {
-            bloomStrength: 1.0,
-            bloomRadius: 5.0,
-        };
-
-        this.gui.add(params, 'bloomStrength', 0, 5, 0.1).onChange((value) => {
-            bloomPass.material.uniforms.uBloomStrength.value = value;
-        });
-        this.gui.add(params, 'bloomRadius', 1, 10, 1).onChange((value) => {
-            bloomPass.material.uniforms.uBloomRadius.value = value;
-        });
+        this.setupGUI();
 
         this.onWindowResize();
         
@@ -121,11 +112,15 @@ class App {
 
     private animate(): void {
         requestAnimationFrame(this.animate.bind(this));
-        this.composer.render();
         this.moveLava(); // Mover la lava
         this.renderer.render(this.scene, this.camera);
     }
 
+    private setupGUI(): void {
+        const bloomFolder = this.gui.addFolder('Bloom Settings');
+        bloomFolder.add(this.bloomPass.material.uniforms['intensity'], 'value', 0, 5, 0.1).name('Bloom Intensity');
+        bloomFolder.open();
+    }
 
     private onWindowResize(): void {
         this.camera.aspect = window.innerWidth / window.innerHeight;

@@ -1,43 +1,39 @@
 precision mediump float;
 
 // Uniforms
-// uniform sampler2D tDiffuse;
-// uniform float u_amount;
+uniform sampler2D tDiffuse; // Textura renderizada
+uniform vec2 resolution;    // Resolución de la pantalla
+uniform float intensity;    // Intensidad del Bloom
 
-// // Varyings de entrada
-// in vec2 vUv;
+// Varying
+in vec2 vUv; // Coordenadas UV
 
-// // Salida
-// out vec4 fragColor;
+// Output
+out vec4 fragColor; // Color de salida
 
-// void main() {
-//     vec2 uv = vUv;
-//     float amount = u_amount * 0.01;
-//     float r = texture2D(tDiffuse, vec2(uv.x + amount, uv.y)).r;
-//     float g = texture2D(tDiffuse, uv).g;
-//     float b = texture2D(tDiffuse, vec2(uv.x - amount, uv.y)).b;
-//     fragColor = vec4(r, g, b, 1.0);
-// }
-
-uniform sampler2D tDiffuse;
-uniform float uBloomStrength;
-uniform float uBloomRadius;
-
-in vec2 vUv;
-
-out vec4 FragColor;
+float luminance(vec3 color) {
+    return dot(color, vec3(0.2126, 0.7152, 0.0722));
+}
 
 void main() {
     vec4 texel = texture(tDiffuse, vUv);
-    vec3 bloom = vec3(0.0);
+    
+    // Obtener el color original del píxel
+    vec4 color = texture(tDiffuse, vUv);
 
-    for (float i = -uBloomRadius; i <= uBloomRadius; i += 1.0) {
-        for (float j = -uBloomRadius; j <= uBloomRadius; j += 1.0) {
-            vec2 offset = vec2(i, j) / textureSize(tDiffuse, 0);
-            bloom += texture(tDiffuse, vUv + offset).rgb;
+    // Aplicar desenfoque a las áreas brillantes
+    vec4 blurredColor = vec4(0.0);
+    for (float x = -1.0; x <= 1.0; x++) {
+        for (float y = -1.0; y <= 1.0; y++) {
+            vec2 offset = vec2(x, y) / resolution; // Desplazamiento normalizado
+            blurredColor += texture(tDiffuse, vUv + offset);
         }
     }
+    blurredColor /= 9.0; // Normalizar el promedio de colores en el kernel
 
-    bloom /= pow((uBloomRadius * 2.0 + 1.0), 2.0);
-    FragColor = vec4(texel.rgb + bloom * uBloomStrength, texel.a);
+    // Combina el color original con el Bloom desenfocado
+    fragColor = color + blurredColor * intensity;
 }
+
+
+
