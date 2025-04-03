@@ -1,7 +1,7 @@
-# Lab 2 Shaders y Materiales | CI5321
+# Lab 3 Shaders y Materiales | CI5321
 
 ## Description 
-This project involves the implementation of three different materials to demonstrate practical knowledge about shaders and materials in computer graphics.
+This project explores bloom effects on emissive materials within dynamic 3D environments. The goal is to demonstrate how bloom enhances the lighting and realism of light-emitting objects, creating vibrant visuals.
 
 ## Team Members
 - **Jennifer Gámez** - Carnet: 16-10396
@@ -28,24 +28,15 @@ This project was developed using the following tech stack:
 5. perfect
 
 ### Important Links
-- [GitHub Repository](https://github.com/JenniferGamez/proyecto_02_1610396_1611247/) 
+- [GitHub Repository](https://github.com/JenniferGamez/proyecto_03_1610396_1611247/) 
 - [Video Link](https://drive.google.com/file/d/1YqdSNW6NpUw6Wr6iKTc9ucTA_SgDrpZS/view?usp=drive_link)
 
 ## ScreenShoots
 
-![Galaxy](./assets/galaxy.jpg)
+![modelo3D_1](./assets/img1.PNG)
 
-![firewoks 1](./assets/fireworks.jpg)
+![modelo3D_2](./assets/img2.PNG)
 
-![fireworks 2](./assets/fireworks2.jpg)
+Flor que da fulgor con tu brillo fiel mueve el tiempo atrás Volviendo a lo que fue!!!!
 
-![wake](./assets/wake.jpg)
-
-## Reference material
-
-- [Signed Distance Function](https://en.wikipedia.org/wiki/Signed_distance_function) from Wikipedia
-- [Intro to 2D SDF](https://iquilezles.org/articles/distfunctions2d/) by Inigo Quilez
-- [RGB Color Picker and converter](https://rgbcolorpicker.com/0-1)
-- [Intro to procedural color palettes](https://iquilezles.org/articles/palettes/) by Inigo Quilez
-- [Procedural palette generator](http://dev.thi.ng/gradients/)
-- [Graphtoy](https://graphtoy.com/)
+![modelo3D_3](./assets/img3.PNG)
