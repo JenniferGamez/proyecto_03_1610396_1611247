@@ -29,7 +29,7 @@ This project was developed using the following tech stack:
 
 ### Important Links
 - [GitHub Repository](https://github.com/JenniferGamez/proyecto_03_1610396_1611247/) 
-- [Video Link](https://drive.google.com/file/d/1YqdSNW6NpUw6Wr6iKTc9ucTA_SgDrpZS/view?usp=drive_link)
+- [Video Link](https://drive.google.com/file/d/1IS3Wn_8sH6EsZyxtzVhqPeNVtf9zVXVT/view?usp=sharing)
 
 ## ScreenShoots
 
