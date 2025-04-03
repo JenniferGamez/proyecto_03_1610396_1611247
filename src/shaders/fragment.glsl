@@ -1,45 +1,34 @@
 precision mediump float;
 
-// uniform sampler2D tDiffuse;
-// uniform float noiseIntensity;
-// uniform float contrast;
+// Uniforms
+uniform sampler2D tDiffuse; // Textura renderizada
+uniform vec2 resolution;    // Resolución de la pantalla
+uniform float intensity;    // Intensidad del Bloom
 
-// varying vec2 vUv;
+// Varying
+in vec2 vUv; // Coordenadas UV
 
-// void main() {
-//     vec4 texel = texture(tDiffuse, vUv);
-//     vec3 color = texel.rgb;
-
-//     // Conversión a tonos verdosos
-//     color = vec3(0.0, color.g * 1.5, 0.0);
-
-//     // Ruido (grano)
-//     float noise = (rand(vUv * time) - 0.5) * noiseIntensity;
-//     color += noise;
-
-//     // Bajo rango dinámico (contraste)
-//     color = (color - 0.5) * contrast + 0.5;
-
-//     // Salida final
-//     gl_FragColor = vec4(color, texel.a);
-// }
-
-// // Función de ruido pseudoaleatorio (puedes usar una mejor si lo deseas)
-// float rand(vec2 co) {
-//     return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
-// }
-
-in vec2 vUv;
-out vec4 fragColor;
-
-uniform sampler2D tDiffuse;
-uniform float noiseIntensity;
-uniform float contrast;
+// Output
+out vec4 fragColor; // Color de salida
 
 void main() {
+    // Color original del píxel
     vec4 color = texture(tDiffuse, vUv);
-    float noise = (fract(sin(dot(vUv, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * noiseIntensity;
-    color.rgb += noise;
-    color.rgb = mix(vec3(0.0), color.rgb, contrast);
-    fragColor = color;
+
+    // Aplicar desenfoque a las áreas brillantes con pesos variables
+    vec4 blurredColor = vec4(0.0);
+    float weightSum = 0.0;
+    
+    for (float x = -1.0; x <= 1.0; x++) {
+        for (float y = -1.0; y <= 1.0; y++) {
+            vec2 offset = vec2(x, y) / resolution; // Desplazamiento normalizado
+            float weight = 1.0 - (abs(x) + abs(y)) * 0.3; // Peso decreciente según la distancia
+            blurredColor += texture(tDiffuse, vUv + offset) * weight;
+            weightSum += weight;
+        }
+    }
+    
+    blurredColor /= weightSum; // Normalizar por los pesos
+
+    fragColor = color + blurredColor * intensity;
 }
